@@ -1,0 +1,9 @@
+# big files
+*.pkl
+
+# useless stuff
+.DS_Store
+
+# cache and checkpoints
+.ipynb_checkpoints/
+__pycache__/
