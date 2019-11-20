@@ -17,7 +17,8 @@ import sys
 
 
 CROP_SIZE = 160
-sub = 'subject03'
+path = './'
+sub = 'subject08'
 print(f"Doing {sub}")
 classes = dict([('pinky',0), ('elle',1), ('yo',2), ('index',3), ('thumb',4)])
 
@@ -45,8 +46,15 @@ def shape_selection(event, x, y, flags, param):
         
 
 ref_point = []
-names = [name for name in sorted(listdir("./dump/img_src/")) if sub in name]
-refpoints_file = open("./dump/refpoints.txt","a") 
+names = [name for name in sorted(listdir(f"{path}/dump/img_src/")) if sub in name]
+done_already = [name for name in sorted(listdir(f"{path}/dump/img_cropped/")) if sub in name]
+names2 = []
+for name in names:
+    if name not in done_already:
+        names2.append(name)
+names = names2
+
+refpoints_file = open(f"{path}/dump/refpoints.txt","a") 
 refpoints_file.write("\n===New encoding session===\n") 
 quit_program = False
 
@@ -55,7 +63,8 @@ for name in names:
     done_rectangle = False
     
     # load the image, clone it, and setup the mouse callback function
-    image = cv2.imread("./dump/img_src/" + name)
+#     print()
+    image = cv2.imread(f"{path}/dump/img_src/" + name)
     clone = image.copy()
     cv2.namedWindow("image")
     cv2.setMouseCallback("image", shape_selection)
@@ -75,7 +84,7 @@ for name in names:
     
     crop_img = clone[ref_point[0][1]:ref_point[1][1], ref_point[0][0]:ref_point[1][0]]
     crop_img = cv2.resize(crop_img, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_CUBIC)
-    cv2.imwrite('./dump/img_cropped/'+name, crop_img)
+    cv2.imwrite(f'{path}/dump/img_cropped/' + name, crop_img)
     
     refpoints_file.write(str(ref_point[1])+"\n") 
     
