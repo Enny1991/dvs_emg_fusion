@@ -43,7 +43,7 @@ def shape_selection(event, x, y, flags, param):
         
 
 ref_point = []
-names = [name for name in listdir("./dump/img_src/") if "tiff" in name]
+names = [name for name in sorted(listdir("./dump/img_src/")) if "tiff" in name and int(name[7:9]) < 6]
 refpoints_file = open("./dump/refpoints.txt","a") 
 refpoints_file.write("\n===New encoding session===\n") 
 quit_program = False
