@@ -17,6 +17,8 @@ import sys
 
 
 CROP_SIZE = 160
+sub = 'subject03'
+print(f"Doing {sub}")
 classes = dict([('pinky',0), ('elle',1), ('yo',2), ('index',3), ('thumb',4)])
 
 
@@ -43,7 +45,7 @@ def shape_selection(event, x, y, flags, param):
         
 
 ref_point = []
-names = [name for name in sorted(listdir("./dump/img_src/")) if "tiff" in name and int(name[7:9]) < 6]
+names = [name for name in sorted(listdir("./dump/img_src/")) if sub in name]
 refpoints_file = open("./dump/refpoints.txt","a") 
 refpoints_file.write("\n===New encoding session===\n") 
 quit_program = False
