@@ -11,3 +11,5 @@ src/*.egg-info/*
 data/
 rawData/
 */Logs/*
+*/*/Logs/*
+*/fusedFeatures/
