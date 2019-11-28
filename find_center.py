@@ -16,9 +16,9 @@ from os import listdir
 import sys
 
 
-CROP_SIZE = 160
+CROP_SIZE = 40
 path = './'
-sub = 'subject08'
+sub = 'subject17'
 print(f"Doing {sub}")
 classes = dict([('pinky',0), ('elle',1), ('yo',2), ('index',3), ('thumb',4)])
 
@@ -83,7 +83,7 @@ for name in names:
             break
     
     crop_img = clone[ref_point[0][1]:ref_point[1][1], ref_point[0][0]:ref_point[1][0]]
-    crop_img = cv2.resize(crop_img, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_CUBIC)
+    # crop_img = cv2.resize(crop_img, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_CUBIC)
     cv2.imwrite(f'{path}/dump/img_cropped/' + name, crop_img)
     
     refpoints_file.write(str(ref_point[1])+"\n") 

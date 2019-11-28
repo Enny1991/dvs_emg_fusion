@@ -351,3 +351,75 @@ def load_all_emg(data_dir, classes, verbose=False):
 # this is to find the zero timestepping of the dvs
 def find_trigger(ts):
     return np.where(np.diff(ts) < 0)[0][0]
+
+corrections = {}
+corrections['subject01_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-15, 'cy':20}
+corrections['subject01_session02'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-10, 'cy':0}
+corrections['subject01_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':10}
+corrections['subject02_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-40, 'cy':5}
+corrections['subject02_session02'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-10, 'cy':5}
+
+corrections['subject03_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':-10}
+corrections['subject03_session02'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':-10}
+corrections['subject03_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':-10}
+corrections['subject04_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-30, 'cy':-15}
+corrections['subject04_session02'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-50, 'cy':-10}
+corrections['subject04_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-40, 'cy':-10}
+corrections['subject05_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-10, 'cy':-10}
+corrections['subject05_session02'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':10, 'cy':-10}
+corrections['subject05_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-10, 'cy':-10}
+corrections['subject06_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-10, 'cy':0}
+corrections['subject06_session02'] = {'fs':197, 'tg':'base', 'shift':1.0, 'cx':5, 'cy':-5}
+corrections['subject06_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':0}
+corrections['subject07_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':-10}
+corrections['subject07_session02'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':0}
+corrections['subject07_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-10, 'cy':0}
+corrections['subject08_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-20, 'cy':10}
+corrections['subject08_session02'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':0}
+corrections['subject08_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':20, 'cy':0}
+corrections['subject09_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':-10}
+
+corrections['subject09_session02'] = {'fs':185, 'tg':'base', 'shift':2.0, 'cx':-10, 'cy':-10}
+
+corrections['subject09_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-10, 'cy':-20}
+corrections['subject10_session01'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':-10}
+corrections['subject10_session02'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':-10}
+corrections['subject10_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':0, 'cy':-10}
+
+corrections['subject11_session01'] = {'fs':174, 'tg':'base', 'shift':-4, 'cx':-5, 'cy':10}
+corrections['subject11_session02'] = {'fs':169, 'tg':'base', 'shift':-3, 'cx':-5, 'cy':15}
+corrections['subject11_session03'] = {'fs':173, 'tg':'base', 'shift':-3.5, 'cx':-8, 'cy':10}
+corrections['subject12_session01'] = {'fs':200, 'tg':'base', 'shift':-2, 'cx':0, 'cy':10}
+corrections['subject12_session02'] = {'fs':200, 'tg':'base', 'shift':-2.5, 'cx':0, 'cy':10}
+corrections['subject12_session03'] = {'fs':200, 'tg':'base', 'shift':-2.5, 'cx':0, 'cy':10}
+corrections['subject13_session01'] = {'fs':200, 'tg':'single', 'shift':-0.5, 'cx':-10, 'cy':20}
+corrections['subject13_session02'] = {'fs':200, 'tg':'base', 'shift':-3, 'cx':5, 'cy':15}
+corrections['subject13_session03'] = {'fs':200, 'tg':'base', 'shift':0, 'cx':0, 'cy':10}
+corrections['subject14_session01'] = {'fs':200, 'tg':'base', 'shift':-2, 'cx':0, 'cy':5}
+corrections['subject14_session02'] = {'fs':200, 'tg':'base', 'shift':-2.5, 'cx':0, 'cy':5}
+corrections['subject14_session03'] = {'fs':200, 'tg':'base', 'shift':-2.5, 'cx':0, 'cy':8}
+corrections['subject15_session01'] = {'fs':200, 'tg':'base', 'shift':-2.5, 'cx':-5, 'cy':15}
+corrections['subject15_session02'] = {'fs':200, 'tg':'base', 'shift':-1.5, 'cx':0, 'cy':15}
+corrections['subject15_session03'] = {'fs':200, 'tg':'base', 'shift':-2.5, 'cx':-5, 'cy':15}
+corrections['subject16_session01'] = {'fs':200, 'tg':'base', 'shift':-1, 'cx':-10, 'cy':15}
+corrections['subject16_session02'] = {'fs':200, 'tg':'base', 'shift':-2, 'cx':-15, 'cy':15}
+corrections['subject16_session03'] = {'fs':200, 'tg':'base', 'shift':-2, 'cx':-20, 'cy':15}
+
+corrections['subject17_session01'] = {'fs':200, 'tg':'base', 'shift':-3, 'cx':7, 'cy':10}
+corrections['subject17_session02'] = {'fs':200, 'tg':'first', 'shift':-3, 'cx':10, 'cy':10}
+corrections['subject17_session03'] = {'fs':200, 'tg':'base', 'shift':-3.2, 'cx':15, 'cy':15}
+corrections['subject18_session01'] = {'fs':200, 'tg':'base', 'shift':-4.3, 'cx':-3, 'cy':-5}
+corrections['subject18_session02'] = {'fs':200, 'tg':'base', 'shift':-3.2, 'cx':-10, 'cy':-15}
+corrections['subject18_session03'] = {'fs':200, 'tg':'base', 'shift':-4.3, 'cx':-10, 'cy':-5}
+corrections['subject19_session01'] = {'fs':167, 'tg':'base', 'shift':-2, 'cx':0, 'cy':20}
+corrections['subject19_session02'] = {'fs':173, 'tg':'base', 'shift':-2.5, 'cx':-3, 'cy':15}
+corrections['subject19_session03'] = {'fs':200, 'tg':'base', 'shift':-2, 'cx':-3, 'cy':15}
+corrections['subject20_session01'] = {'fs':174, 'tg':'base', 'shift':-2.6, 'cx':-10, 'cy':10}
+corrections['subject20_session02'] = {'fs':176, 'tg':'base', 'shift':-3.5, 'cx':-5, 'cy':0}
+corrections['subject20_session03'] = {'fs':174, 'tg':'base', 'shift':-4, 'cx':-5, 'cy':5}
+
+corrections['subject21_session01'] = {'fs':200, 'tg':'base', 'shift':-3, 'cx':0, 'cy':0}
+corrections['subject21_session02'] = {'fs':200, 'tg':'base', 'shift':-3.5, 'cx':2, 'cy':-2}
+corrections['subject21_session03'] = {'fs':200, 'tg':'base', 'shift':-2.8, 'cx':5, 'cy':5}
+
+corrections['subject02_session03'] = {'fs':200, 'tg':'base', 'shift':1.0, 'cx':-3, 'cy':0}
