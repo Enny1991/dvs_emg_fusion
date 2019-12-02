@@ -7,6 +7,13 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
+def compute_scores (scores, lat_times):
+    mean = np.mean(scores, axis=0)
+    std = np.std(scores, axis=0)
+    for t in range(len(lat_times)):
+        print("    After "+str(int(lat_times[t]))+"ms inference: "+str(mean[t])+"% accuracy, with std dev "+str(std[t])+"%")
+    return (mean, std)
+
 
 lat_times = (10, 30, 50, 70, 100, 150, 200)  #milliseconds
 E_per_SOP_MorphIC = 30e-12                   #30pJ  (incremental definition of the energy per synaptoc operation (SOP), cfr MorphIC paper)
@@ -21,19 +28,20 @@ E_per_SOP_ODIN    = 8.4e-12                  #8.4pJ (incremental definition of t
 #                     includes the dummy crossbar SOPs processed for DVS/MorphIC (only 210 out of 512 are actually used for computation)
 #                     and the dummy crossbar SOPs processed for EMG/ODIN (only 230 out of 256 are actually used for computation).
 #                     All SOPs for the last layer are used for computation, does not account for the energy cost of the external mapping table.
-[EMG_final_scores, DVS_final_scores, fusion_scores, fusion_SOPs] = pickle.load(open('final_fusion.pkl', 'rb'))
+[_, _, fusion_scores, fusion_SOPs] = pickle.load(open('final_fusion.pkl', 'rb'))
+EMG_scores = pickle.load(open('lat_energy_ODIN.pkl', 'rb'))[0]		#Small bug corrected which made the initial EMG results appear better than expected.
+DVS_scores = pickle.load(open('lat_energy_MorphIC.pkl', 'rb'))[0]
+
+
 
 #Extract results and write text summary:
 print("=== FINAL SUMMARY ===")
-print("= DVS final scores after 200ms =")
-print("    After 200ms inference: "+str(np.mean(DVS_final_scores))+"% accuracy, with std dev "+str(np.std(DVS_final_scores))+"%")
-print("= EMG final scores after 200ms =")
-print("    After 200ms inference: "+str(np.mean(EMG_final_scores))+"% accuracy, with std dev "+str(np.std(EMG_final_scores))+"%")
+print("= DVS SCORES =")
+(DVS_mean, DVS_std) = compute_scores(DVS_scores, lat_times)
+print("= EMG SCORES =")
+(EMG_mean, EMG_std) = compute_scores(EMG_scores, lat_times)
 print("= FUSION SCORES =")
-fusion_mean = np.mean(fusion_scores, axis=0)
-fusion_std = np.std(fusion_scores, axis=0)
-for t in range(len(lat_times)):
-    print("    After "+str(int(lat_times[t]))+"ms inference: "+str(fusion_mean[t])+"% accuracy, with std dev "+str(fusion_std[t])+"%")
+(fusion_mean, fusion_std) = compute_scores(fusion_scores, lat_times)
 print("= SOPs =")
 chips = ["MorphIC", "ODIN   ", "fusion "]
 SOP_mean_per_chip = np.mean(fusion_SOPs, axis=1)
@@ -51,7 +59,10 @@ for t in range(len(lat_times)):
 
 #Accuracy/latency plot showing standard deviations
 plt.figure()
-plt.errorbar(lat_times, fusion_mean, fusion_std, marker='o')
+dvs = plt.errorbar(lat_times, DVS_mean, DVS_std, marker='o')
+emg = plt.errorbar(lat_times, EMG_mean, EMG_std, marker='o')
+fus = plt.errorbar(lat_times, fusion_mean, fusion_std, marker='o')
+plt.legend([dvs,emg,fus], ["DVS data (MorphIC)", "EMG data (ODIN)", "Sensor fusion"], loc="lower right")
 plt.xlabel('Inference time [ms]')
 plt.ylabel('Inference accuracy [%]')
 
