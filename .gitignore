@@ -19,7 +19,7 @@ dump/
 *.csv
 relax21_dvs_emg_rms_step2.pkl
 relax21_dvs_emg_rms_spikes.pkl
-
+*.ai
 .DS_Store
 jAER_utils/
 

@@ -198,35 +198,57 @@ def preprocess(x_emg_train, x_img_train, x_emg_test, x_img_test):
 
 
 def baseline_charlotte(x_emg_train, x_img_train, y_train, x_emg_test, x_img_test, y_test, n_epochs=(10, 30, 10)):
+    x_img_train_c = np.mean(x_img_train, -1)
+    x_img_test_c = np.mean(x_img_test, -1)
 
-    x_img_train_c = x_img_train[:, :, :, 0].reshape(-1, 1600)
-    x_img_test_c = x_img_test[:, :, :, 0].reshape(-1, 1600)
+    a = x_img_train_c[:, ::2, ::2]
+    b = x_img_train_c[:, 1::2, ::2]
+    c = x_img_train_c[:, ::2, 1::2]
+    d = x_img_train_c[:, 1::2, 1::2]
+
+    concat_inp_train = [a.reshape(-1, 400), b.reshape(-1, 400), c.reshape(-1, 400), d.reshape(-1, 400)]
+
+    a = x_img_test_c[:, ::2, ::2]
+    b = x_img_test_c[:, 1::2, ::2]
+    c = x_img_test_c[:, ::2, 1::2]
+    d = x_img_test_c[:, 1::2, 1::2]
+
+    concat_inp_test = [a.reshape(-1, 400), b.reshape(-1, 400), c.reshape(-1, 400), d.reshape(-1, 400)]
 
     # mlp for img
-    img_input_shape_c = (1600,)
-    # create the mlp model
-    model_img_c = Sequential()
-    model_img_c.add(Dense(210, activation='relu', input_shape=img_input_shape_c))
-    model_img_c.add(Dropout(0.3))
-    model_img_c.add(Dense(5, activation='softmax'))
+    img_input_shape_c = (400,)
+    models = []
+
+    for i in range(4):
+        # create the mlp model
+        model_img_c = Sequential()
+        model_img_c.add(Dense(210, activation='relu', input_shape=img_input_shape_c))
+        model_img_c.add(Dropout(0.3))
+        model_img_c.add(Dense(5, activation='softmax'))
+        models.append(model_img_c)
 
     # compile model
-    model_img_c.compile(loss=keras.losses.categorical_crossentropy,
-                        optimizer=keras.optimizers.Adadelta(),
-                        metrics=['accuracy'])
+    for inp_train, inp_test, mdl in zip(concat_inp_train, concat_inp_test, models):
+        mdl.compile(loss=keras.losses.categorical_crossentropy,
+                    optimizer=keras.optimizers.Adadelta(),
+                    metrics=['accuracy'])
 
-    # fit the model
-    model_img_c.fit(x_img_train_c, y_train,
-                    batch_size=32,
-                    epochs=n_epochs[0],
-                    verbose=1,
-                    validation_data=(x_img_test_c, y_test))
+        # fit the model
+        mdl.fit(inp_train, y_train,
+                batch_size=32,
+                epochs=n_epochs[0],
+                verbose=1,
+                validation_data=(inp_test, y_test))
 
+    all_scores = []
+    for inp_test, mdl in zip(concat_inp_test, models):
+        # evaluate the model
+        all_scores.append(mdl.predict(inp_test))
     # evaluate the model
-    scores = model_img_c.evaluate(x_img_test_c, y_test, verbose=1)
-    print("%s: %.2f%%" % (model_img_c.metrics_names[1], scores[1] * 100))
+    final = np.argmax(sum(all_scores), -1)
+    final_y = np.argmax(y_test, -1)
 
-    score_img_c = scores[1] * 100
+    score_img_c = np.sum(np.float32((final_y - final) == 0)) / len(final_y) * 100
 
     # mlp for emg
     img_input_shape_c = (16,)
@@ -249,15 +271,12 @@ def baseline_charlotte(x_emg_train, x_img_train, y_train, x_emg_test, x_img_test
 
     # evaluate the model
     scores = model_emg_c.evaluate(x_emg_test, y_test, verbose=0)
-    print("%s: %.2f%%" % (model_emg_c.metrics_names[1], scores[1] * 100))
-
     score_emg_c = scores[1] * 100
 
-    mergedOut_c = Concatenate()([model_img_c.output, model_emg_c.output])
+    mergedOut_c = Concatenate()([a.output for a in models] + [model_emg_c.output])
     mergedOut_c = Dense(5, activation='softmax')(mergedOut_c)
-    model_fus_c = Model([model_img_c.input, model_emg_c.input], mergedOut_c)
+    model_fus_c = Model([a.input for a in models] + [model_emg_c.input], mergedOut_c)
 
-    # freeze the layers except the last dense
     for layer in model_fus_c.layers[:len(model_fus_c.layers) - 1]:
         layer.trainable = False
 
@@ -267,16 +286,14 @@ def baseline_charlotte(x_emg_train, x_img_train, y_train, x_emg_test, x_img_test
                         metrics=['accuracy'])
 
     # fit the model
-    model_fus_c.fit([x_img_train_c, x_emg_train], y_train,
+    model_fus_c.fit(concat_inp_train + [x_emg_train], y_train,
                     batch_size=32,
                     epochs=n_epochs[2],
                     verbose=1,
-                    validation_data=([x_img_test_c, x_emg_test], y_test))
+                    validation_data=(concat_inp_test + [x_emg_test], y_test))
 
     # evaluate the model
-    scores = model_fus_c.evaluate([x_img_test_c, x_emg_test], y_test, verbose=1)
-    print("%s: %.2f%%" % (model_fus_c.metrics_names[1], scores[1] * 100))
-
+    scores = model_fus_c.evaluate(concat_inp_test + [x_emg_test], y_test, verbose=1)
     score_fus_c = scores[1] * 100
 
     return score_emg_c, score_img_c, score_fus_c
@@ -380,7 +397,7 @@ def main():
     frame_lens = [0.2, 0.15, 0.1, 0.070, 0.050, 0.030, 0.015]
     n_epochs = [(10, 15, 10), (10, 15, 10), (8, 12, 8), (7, 11, 7), (5, 10, 5), (3, 10, 3), (2, 10, 2)]
 
-    with open('full_results_cross_latency_v1.csv', 'w') as csv_file:
+    with open('full_results_cross_latency_v2_only_ch.csv', 'w') as csv_file:
         file_writer = csv.writer(csv_file, delimiter=',')
         header = ["model", "feat", "frame_len", "test_ses", "accuracy"]
         file_writer.writerow(header)
@@ -396,15 +413,15 @@ def main():
                 x_emg_train, x_img_train, x_emg_test, x_img_test = preprocess(x_emg_train, x_img_train,
                                                                               x_emg_test, x_img_test)
 
-                score_emg_s, score_img_s, score_fus_s = baseline_sumit(x_emg_train, x_img_train, y_train,
-                                                                       x_emg_test, x_img_test, y_test, n_epochs=n_epoch)
+                # score_emg_s, score_img_s, score_fus_s = baseline_sumit(x_emg_train, x_img_train, y_train,
+                #                                                        x_emg_test, x_img_test, y_test, n_epochs=n_epoch)
 
                 score_emg_c, score_img_c, score_fus_c = baseline_charlotte(x_emg_train, x_img_train, y_train,
                                                                            x_emg_test, x_img_test, y_test, n_epochs=n_epoch)
 
-                file_writer.writerow(['sumit', "emg", frame_len, test_ses, score_emg_s])
-                file_writer.writerow(['sumit', "img", frame_len, test_ses, score_img_s])
-                file_writer.writerow(['sumit', "fus", frame_len, test_ses, score_fus_s])
+                # file_writer.writerow(['sumit', "emg", frame_len, test_ses, score_emg_s])
+                # file_writer.writerow(['sumit', "img", frame_len, test_ses, score_img_s])
+                # file_writer.writerow(['sumit', "fus", frame_len, test_ses, score_fus_s])
                 file_writer.writerow(['charlotte', "emg", frame_len, test_ses, score_emg_c])
                 file_writer.writerow(['charlotte', "img", frame_len, test_ses, score_img_c])
                 file_writer.writerow(['charlotte', "fus", frame_len, test_ses, score_fus_c])
