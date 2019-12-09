@@ -16,8 +16,6 @@ def compute_scores (scores, lat_times):
 
 
 lat_times = (10, 30, 50, 70, 100, 150, 200)  #milliseconds
-E_per_SOP_MorphIC = 30e-12                   #30pJ  (incremental definition of the energy per synaptoc operation (SOP), cfr MorphIC paper)
-E_per_SOP_ODIN    = 8.4e-12                  #8.4pJ (incremental definition of the energy per synaptoc operation (SOP), cfr ODIN paper)
 
 #Load results
 #   EMG_final_scores: accuracy results for each cross-validation set (3) after 200ms with a 3-bit 16-230-5 MLP on ODIN.
@@ -28,8 +26,8 @@ E_per_SOP_ODIN    = 8.4e-12                  #8.4pJ (incremental definition of t
 #                     includes the dummy crossbar SOPs processed for DVS/MorphIC (only 210 out of 512 are actually used for computation)
 #                     and the dummy crossbar SOPs processed for EMG/ODIN (only 230 out of 256 are actually used for computation).
 #                     All SOPs for the last layer are used for computation, does not account for the energy cost of the external mapping table.
-[_, _, fusion_scores, fusion_SOPs] = pickle.load(open('final_fusion.pkl', 'rb'))
-EMG_scores = pickle.load(open('lat_energy_ODIN.pkl', 'rb'))[0]		#Small bug corrected which made the initial EMG results appear better than expected.
+[fusion_scores, fusion_SOPs, fusion_Einf, fusion_Tinf] = pickle.load(open('final_fusion.pkl', 'rb'))
+EMG_scores = pickle.load(open('lat_energy_ODIN.pkl', 'rb'))[0]
 DVS_scores = pickle.load(open('lat_energy_MorphIC.pkl', 'rb'))[0]
 
 
@@ -42,20 +40,19 @@ print("= EMG SCORES =")
 (EMG_mean, EMG_std) = compute_scores(EMG_scores, lat_times)
 print("= FUSION SCORES =")
 (fusion_mean, fusion_std) = compute_scores(fusion_scores, lat_times)
-print("= SOPs =")
-chips = ["MorphIC", "ODIN   ", "fusion "]
+
 SOP_mean_per_chip = np.mean(fusion_SOPs, axis=1)
 SOP_std_per_chip = np.std(fusion_SOPs, axis=1)
-SOP_mean = np.mean(np.sum(fusion_SOPs,axis=0), axis=0)
-SOP_std = np.std(np.sum(fusion_SOPs,axis=0), axis=0)
-E_per_SOP = np.asarray([E_per_SOP_MorphIC, E_per_SOP_ODIN, E_per_SOP_ODIN])
-E_mean = np.mean(np.sum(fusion_SOPs*E_per_SOP[:,np.newaxis,np.newaxis], axis=0), axis=0)
-E_std = np.std(np.sum(fusion_SOPs*E_per_SOP[:,np.newaxis,np.newaxis], axis=0), axis=0)
-for t in range(len(lat_times)):
-    print("    After "+str(int(lat_times[t]))+"ms inference: ")
-    for i in range(3):
-        print("        "+chips[i]+": "+str(SOP_mean_per_chip[i,t])+" SOPs with a std dev of "+str(SOP_std_per_chip[i,t])+" SOPs")
-        
+SOP_mean = np.mean(np.sum(fusion_SOPs[2:,:,:],axis=0), axis=0)
+SOP_std = np.std(np.sum(fusion_SOPs[2:,:,:],axis=0), axis=0)
+Einf_mean_per_chip = np.mean(fusion_Einf, axis=1)
+Einf_std_per_chip = np.std(fusion_Einf, axis=1)
+Einf_mean = np.mean(np.sum(fusion_Einf[2:,:,:],axis=0), axis=0)
+Einf_std = np.std(np.sum(fusion_Einf[2:,:,:],axis=0), axis=0)
+Tinf_mean_per_chip = np.mean(fusion_Tinf, axis=1)
+Tinf_std_per_chip = np.std(fusion_Tinf, axis=1)
+Tinf_mean = np.mean(np.max(fusion_Tinf[2:,:,:],axis=0), axis=0)
+Tinf_std = np.std(np.max(fusion_Tinf[2:,:,:],axis=0), axis=0)
 
 #Accuracy/latency plot showing standard deviations
 plt.figure()
@@ -68,17 +65,32 @@ plt.ylabel('Inference accuracy [%]')
 
 #SOP/latency plot
 plt.figure()
-plt.errorbar(lat_times, SOP_mean/1e6, SOP_std/1e6, marker='o')
+dvs = plt.errorbar(lat_times, SOP_mean_per_chip[0,:]/1e6, SOP_std_per_chip[0,:]/1e6, marker='o')
+emg = plt.errorbar(lat_times, SOP_mean_per_chip[1,:]/1e6, SOP_std_per_chip[1,:]/1e6, marker='o')
+fus = plt.errorbar(lat_times, SOP_mean/1e6, SOP_std/1e6, marker='o')
+plt.legend([dvs,emg,fus], ["DVS data (MorphIC)", "EMG data (ODIN)", "Sensor fusion"], loc="upper left")
 plt.xlabel('Inference time [ms]')
 plt.ylabel('# MSOPs')
 
+#Processing time/latency plot
+plt.figure()
+dvs = plt.errorbar(lat_times, Tinf_mean_per_chip[0,:]*1e3, Tinf_std_per_chip[0,:]*1e3, marker='o')
+emg = plt.errorbar(lat_times, Tinf_mean_per_chip[1,:]*1e3, Tinf_std_per_chip[1,:]*1e3, marker='o')
+fus = plt.errorbar(lat_times, Tinf_mean*1e3, Tinf_std*1e3, marker='o')
+plt.legend([dvs,emg,fus], ["DVS data (MorphIC)", "EMG data (ODIN)", "Sensor fusion"], loc="upper left")
+plt.xlabel('Inference time [ms]')
+plt.ylabel('Processing time [ms]')
+
 #Energy/latency plot
 plt.figure()
-plt.errorbar(lat_times, E_mean*1e6, E_std*1e6, marker='o')
+dvs = plt.errorbar(lat_times, Einf_mean_per_chip[0,:]*1e6, Einf_std_per_chip[0,:]*1e6, marker='o')
+emg = plt.errorbar(lat_times, Einf_mean_per_chip[1,:]*1e6, Einf_std_per_chip[1,:]*1e6, marker='o')
+fus = plt.errorbar(lat_times, Einf_mean*1e6, Einf_std*1e6, marker='o')
+plt.legend([dvs,emg,fus], ["DVS data (MorphIC)", "EMG data (ODIN)", "Sensor fusion"], loc="upper left")
 plt.xlabel('Inference time [ms]')
 plt.ylabel('Dynamic energy per classification [uJ]')
         
-        
+plt.show()        
         
         
         
