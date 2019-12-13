@@ -30,7 +30,9 @@ lat_times = (10, 30, 50, 70, 100, 150, 200)  #milliseconds
 EMG_scores = pickle.load(open('lat_energy_ODIN.pkl', 'rb'))[0]
 DVS_scores = pickle.load(open('lat_energy_MorphIC.pkl', 'rb'))[0]
 
-
+#Corrections for quad-core PARALLEL processing in MorphIC: inference time is divided by 4, power is multiplied by 4, energy does not change (the activity evenly distributed among the 4 cores)
+fusion_Tinf[0,:,:] /= 4
+fusion_Tinf[2,:,:] /= 4
 
 #Extract results and write text summary:
 print("=== FINAL SUMMARY ===")
@@ -49,10 +51,17 @@ Einf_mean_per_chip = np.mean(fusion_Einf, axis=1)
 Einf_std_per_chip = np.std(fusion_Einf, axis=1)
 Einf_mean = np.mean(np.sum(fusion_Einf[2:,:,:],axis=0), axis=0)
 Einf_std = np.std(np.sum(fusion_Einf[2:,:,:],axis=0), axis=0)
+fusion_Tinf[4,:,] = fusion_Tinf[4,:,] + fusion_Tinf[3,:,]
 Tinf_mean_per_chip = np.mean(fusion_Tinf, axis=1)
 Tinf_std_per_chip = np.std(fusion_Tinf, axis=1)
 Tinf_mean = np.mean(np.max(fusion_Tinf[2:,:,:],axis=0), axis=0)
 Tinf_std = np.std(np.max(fusion_Tinf[2:,:,:],axis=0), axis=0)
+fusion_Pinf = fusion_Einf*fusion_Tinf
+Pinf_mean_per_chip = np.mean(fusion_Pinf, axis=1)
+Pinf_std_per_chip = np.std(fusion_Pinf, axis=1)
+Pinf_mean = np.mean(np.sum(fusion_Pinf[2:,:,:],axis=0), axis=0)
+Pinf_std = np.std(np.sum(fusion_Pinf[2:,:,:],axis=0), axis=0)
+
 
 #Accuracy/latency plot showing standard deviations
 plt.figure()
@@ -89,7 +98,16 @@ fus = plt.errorbar(lat_times, Einf_mean*1e6, Einf_std*1e6, marker='o')
 plt.legend([dvs,emg,fus], ["DVS data (MorphIC)", "EMG data (ODIN)", "Sensor fusion"], loc="upper left")
 plt.xlabel('Inference time [ms]')
 plt.ylabel('Dynamic energy per classification [uJ]')
-        
+
+#EDP/latency plot
+plt.figure()
+dvs = plt.errorbar(lat_times, Pinf_mean_per_chip[0,:]*1e6, Pinf_std_per_chip[0,:]*1e6, marker='o')
+emg = plt.errorbar(lat_times, Pinf_mean_per_chip[1,:]*1e6, Pinf_std_per_chip[1,:]*1e6, marker='o')
+fus = plt.errorbar(lat_times, Pinf_mean*1e6, Pinf_std*1e6, marker='o')
+plt.legend([dvs,emg,fus], ["DVS data (MorphIC)", "EMG data (ODIN)", "Sensor fusion"], loc="upper left")
+plt.xlabel('Inference time [ms]')
+plt.ylabel('EDP [uJ*s]')
+
 plt.show()        
         
         
