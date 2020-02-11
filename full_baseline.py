@@ -74,6 +74,8 @@ def load_emg_dataset():
 
     return X_EMG, SUB_EMG, SES_EMG, TRI_EMG, Y_EMG
 
+def rgb2gray(rgb):
+    return np.dot(rgb[...,:3], [0.299, 0.587, 0.144])
 
 def load_img_dataset():
     all_frames = [i for i in sorted(os.listdir(crop_path)) if 'tiff' in i]
@@ -89,7 +91,7 @@ def load_img_dataset():
     SES_IMG = np.array(SES_IMG)
     TRI_IMG = np.array(TRI_IMG)
 
-    X_IMG = np.array([plt.imread(crop_path + f)[::-1] for f in all_frames])
+    X_IMG = np.array([rgb2gray(plt.imread(crop_path + f))[::-1] for f in all_frames])
     X_IMG = np.array(X_IMG)
 
     return X_IMG, SUB_IMG, SES_IMG, TRI_IMG, Y_IMG
@@ -198,8 +200,10 @@ def preprocess(x_emg_train, x_img_train, x_emg_test, x_img_test):
 
 
 def baseline_charlotte(x_emg_train, x_img_train, y_train, x_emg_test, x_img_test, y_test, n_epochs=(10, 30, 10)):
-    x_img_train_c = np.mean(x_img_train, -1)
-    x_img_test_c = np.mean(x_img_test, -1)
+    # x_img_train_c = np.mean(x_img_train, -1)
+    # x_img_test_c = np.mean(x_img_test, -1)
+    x_img_train_c = x_img_train
+    x_img_test_c = x_img_test
 
     a = x_img_train_c[:, ::2, ::2]
     b = x_img_train_c[:, 1::2, ::2]
@@ -301,7 +305,7 @@ def baseline_charlotte(x_emg_train, x_img_train, y_train, x_emg_test, x_img_test
 
 def baseline_sumit(x_emg_train, x_img_train, y_train, x_emg_test, x_img_test, y_test, n_epochs=(10, 30, 10)):
     # cnn for img
-    img_input_shape_s = (40, 40, 3)
+    img_input_shape_s = (40, 40, 1)
     num_classes = 5
     # create the cnn model
     model_img_s = Sequential()
@@ -397,7 +401,7 @@ def main():
     frame_lens = [0.2, 0.15, 0.1, 0.070, 0.050, 0.030, 0.015]
     n_epochs = [(10, 15, 10), (10, 15, 10), (8, 12, 8), (7, 11, 7), (5, 10, 5), (3, 10, 3), (2, 10, 2)]
 
-    with open('full_results_cross_latency_v2_only_ch.csv', 'w') as csv_file:
+    with open('full_results_cross_latency_v3_grayscale.csv', 'w') as csv_file:
         file_writer = csv.writer(csv_file, delimiter=',')
         header = ["model", "feat", "frame_len", "test_ses", "accuracy"]
         file_writer.writerow(header)
@@ -413,15 +417,15 @@ def main():
                 x_emg_train, x_img_train, x_emg_test, x_img_test = preprocess(x_emg_train, x_img_train,
                                                                               x_emg_test, x_img_test)
 
-                # score_emg_s, score_img_s, score_fus_s = baseline_sumit(x_emg_train, x_img_train, y_train,
-                #                                                        x_emg_test, x_img_test, y_test, n_epochs=n_epoch)
+                score_emg_s, score_img_s, score_fus_s = baseline_sumit(x_emg_train, x_img_train[..., None], y_train,
+                                                                       x_emg_test, x_img_test[..., None], y_test, n_epochs=n_epoch)
 
                 score_emg_c, score_img_c, score_fus_c = baseline_charlotte(x_emg_train, x_img_train, y_train,
                                                                            x_emg_test, x_img_test, y_test, n_epochs=n_epoch)
 
-                # file_writer.writerow(['sumit', "emg", frame_len, test_ses, score_emg_s])
-                # file_writer.writerow(['sumit', "img", frame_len, test_ses, score_img_s])
-                # file_writer.writerow(['sumit', "fus", frame_len, test_ses, score_fus_s])
+                file_writer.writerow(['sumit', "emg", frame_len, test_ses, score_emg_s])
+                file_writer.writerow(['sumit', "img", frame_len, test_ses, score_img_s])
+                file_writer.writerow(['sumit', "fus", frame_len, test_ses, score_fus_s])
                 file_writer.writerow(['charlotte', "emg", frame_len, test_ses, score_emg_c])
                 file_writer.writerow(['charlotte', "img", frame_len, test_ses, score_img_c])
                 file_writer.writerow(['charlotte', "fus", frame_len, test_ses, score_fus_c])
