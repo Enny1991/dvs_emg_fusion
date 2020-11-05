@@ -124,7 +124,7 @@ def sync_datasets(EMG, IMG, frame_len=0.2, frame_step=0.1):
                     e = X_EMG[idx_emg][0]
                     f = X_IMG[idx_img]
 
-                    mav = analyze(e, fs=fs, frame_len=frame_len, frame_step=frame_step, feat='MSV', preprocess=False)
+                    mav = analyze(e, fs=fs, frame_len=frame_len, frame_step=frame_step, feat='MAV', preprocess=False)
                     rms = analyze(e, fs=fs, frame_len=frame_len, frame_step=frame_step, feat='RMS', preprocess=False)
                     a = np.concatenate([mav, rms], 1)
 
